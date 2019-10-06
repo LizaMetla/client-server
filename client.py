@@ -4,8 +4,6 @@ from asyncio import sleep
 
 
 async def tcp_echo_client(loop):
-    # while True:
-    # pass
     ui = UserInterface(loop)
     await ui.socket_start()
     ans = await ui.input_point_of_menu()
@@ -42,8 +40,25 @@ class UserInterface:
     async def read_data(self):
         data = await self.reader.read(10000)
         response = json.loads(data.decode())
-        print('Response from server: ', response)
+        self.print_response(response)
         return response
+
+    def dict_print(self, data):
+        for key, value in data.items():
+            print(f'{key}: {value}')
+        print('\n\n')
+
+    def print_response(self, data):
+        if len(data) == 0:
+            print('Данные не найдены')
+        elif isinstance(data, dict):
+            self.dict_print(data)
+        else:
+            for line in data:
+                if isinstance(line, dict):
+                    self.dict_print(line)
+                else:
+                    print(line)
 
     def print_common_menu(self):
         for point, settings in self.menu_common.items():

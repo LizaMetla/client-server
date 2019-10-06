@@ -2,11 +2,16 @@ import asyncio
 import json
 from dataclasses import asdict
 
+CONNECTION_COUNTER = 0
 from models import TouristOrganisation
 
 
 def get(pk=None):
-    return asdict(TouristOrganisation.get(pk))
+    tour = TouristOrganisation.get(pk)
+    if not tour:
+        return dict()
+    else:
+        return asdict(tour)
 
 
 def add(**kwargs):
@@ -41,24 +46,27 @@ operators = {'get': get, 'add': add, 'delete': delete, 'get_all_tours': get_all_
 
 
 async def handle_echo(reader, writer):
+    global CONNECTION_COUNTER
+    CONNECTION_COUNTER += 1
+    addr = writer.get_extra_info("peername")
+    print(f'Подключение от пользователя: {addr}')
+    print(f'Количество подключений: {CONNECTION_COUNTER}')
     while True:
         data = await reader.read(10000)
         if not data:
             break
-        print(data)
         message = data.decode()
-        addr = writer.get_extra_info('peername')
-
-        print(f"Received {message!r} from {addr!r}")
+        print(f"Сообщение: {message!r} от пользователя {addr!r}")
         request = json.loads(message)
         response = operators.get(request.get('method'))(**request.get('args'))
-        print(response)
         data = json.dumps(response).encode()
 
-        print(f"Send: {data!r}")
+        print(f"Отправка от сервера: {data!r}")
         writer.write(data)
         await writer.drain()
-    print("Close the connection")
+    print(f"Закрытие соединения с пользователем: {addr}")
+    CONNECTION_COUNTER -= 1
+    print(f'Количество подключений: {CONNECTION_COUNTER}')
     writer.close()
 
 
@@ -67,7 +75,8 @@ coro = asyncio.start_server(handle_echo, '127.0.0.1', 8888, loop=loop)
 server = loop.run_until_complete(coro)
 
 # Serve requests until Ctrl+C is pressed
-print('Serving on {}'.format(server.sockets[0].getsockname()))
+print('Запуск сервера на {}'.format(server.sockets[0].getsockname()))
+print(f'Количество подключений: {CONNECTION_COUNTER}')
 try:
     loop.run_forever()
 except KeyboardInterrupt:
