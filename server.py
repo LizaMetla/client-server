@@ -1,6 +1,7 @@
 import asyncio
 import json
 from dataclasses import asdict
+from random import seed
 
 CONNECTION_COUNTER = 0
 from models import TouristOrganisation
@@ -15,6 +16,7 @@ def get(pk=None):
 
 
 def add(**kwargs):
+    seed(None)
     return asdict(TouristOrganisation(**kwargs).save())
 
 

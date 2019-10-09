@@ -9,11 +9,13 @@ class TouristOrganisation:
     cost: float
     timeline: str
     type_of_transport: str
-    pk: str = uuid4().hex
+    pk: str = None
 
     def save(self):
         all_tours = self.get_all_tours()
         new_tours = []
+        if self.pk is None:
+            self.pk = uuid4().hex
         for tour in all_tours:
             if tour.pk != self.pk:
                 new_tours.append(tour)
